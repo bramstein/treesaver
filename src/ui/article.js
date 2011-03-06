@@ -10,6 +10,7 @@ goog.require('treesaver.constants');
 goog.require('treesaver.dimensions');
 goog.require('treesaver.dom');
 goog.require('treesaver.events');
+goog.require('treesaver.Hyphenation');
 goog.require('treesaver.layout.BreakRecord');
 goog.require('treesaver.layout.Content');
 goog.require('treesaver.layout.ContentPosition');
@@ -154,6 +155,42 @@ treesaver.ui.Article.extractTitle = function(html) {
   return null;
 };
 
+treesaver.ui.Article.hyphenateText = function(el, hyphenator) {
+  var words = el.nodeValue.split(/\b/g);
+
+  words = words.map(function (word) {
+    if (word.length < hyphenator.minLength) {
+      return word;
+    } else {
+      return hyphenator.hyphenate(word).join('\u00AD');
+    }
+  });
+
+  el.nodeValue = words.join('');
+};
+
+/**
+ * Hyphenates the given element.
+ * @param {Element} el The element whose children are to be hyphenated.
+ */
+treesaver.ui.Article.hyphenate = function(el) {
+  var articleLanguage = el.getAttribute('lang');
+
+  if (articleLanguage && window.Hyphenator.languages[articleLanguage]) {
+    var nodes = treesaver.dom.getElementsByQuery('p, li, a, em, strong, span', el),
+        hyphenator = new treesaver.Hyphenation(window.Hyphenator.languages[articleLanguage]);
+
+    nodes.forEach(function (el) {
+      var i = 0, len = el.childNodes.length;
+      for (; i < len; i += 1) {
+        if (el.childNodes[i].nodeType === 3) {
+          treesaver.ui.Article.hyphenateText(el.childNodes[i], hyphenator);
+        }
+      }
+    });
+  }
+};
+
 /**
  * @param {?string} html  HTML for the article. May be just the
  *                        <article> node, or an entire .html page.
@@ -186,6 +223,9 @@ treesaver.ui.Article.prototype.processHTML = function(html) {
   // Look for just the content node
   article_node = document.getElementById('ts_content') ||
                  treesaver.dom.getElementsByTagName('article', fake_grid)[0];
+
+  treesaver.ui.Article.hyphenate(article_node);
+
 
   if (!article_node) {
     treesaver.debug.error('Could not find article content in HTML: ' + html);
