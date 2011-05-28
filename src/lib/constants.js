@@ -5,13 +5,6 @@
 goog.provide('treesaver.constants');
 
 /**
- * Whether the code is loaded via modules or a single file
- *
- * @define {boolean}
- */
-var USE_MODULES = true;
-
-/**
  * Whether older browsers should be supported
  *
  * @define {boolean}

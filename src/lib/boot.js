@@ -11,10 +11,8 @@ goog.require('treesaver.debug');
 goog.require('treesaver.dom');
 goog.require('treesaver.domready');
 goog.require('treesaver.events');
-goog.require('treesaver.modules');
 goog.require('treesaver.resources');
 goog.require('treesaver.scheduler');
-goog.require('treesaver.scriptloader');
 
 /**
  * @const
@@ -44,31 +42,6 @@ treesaver.boot.load = function() {
     treesaver.boot.resourcesLoaded_ = true;
     treesaver.boot.loadProgress_();
   });
-
-  // Load other scripts
-  if (USE_MODULES) {
-    // goog.require doesn't play nice with the DOM and async loading, so
-    // we require the files beforehand
-    //
-    // However, we must alias the goog.require call so it doesn't get caught
-    // in the dependency calculations
-    if (!COMPILED) {
-      var gr = goog.require;
-
-      // Wrap in a try-catch in order to avoid errors
-      try {
-        gr('treesaver.core');
-      }
-      catch (ex) {
-        // Ignore
-      }
-    }
-
-    treesaver.scriptloader.load(treesaver.modules.get('treesaver-core'), function(name) {
-      treesaver.boot.coreLoaded_ = true;
-      treesaver.boot.loadProgress_();
-    });
-  }
 
   // Watch for dom ready
   if (!treesaver.domready.ready()) {
@@ -142,9 +115,6 @@ treesaver.boot.cleanup_ = function() {
 
   // Kill loading flags
   delete treesaver.boot.resourcesLoaded_;
-  if (USE_MODULES) {
-    delete treesaver.boot.coreLoaded_;
-  }
   delete treesaver.boot.domReady_;
 };
 
@@ -194,11 +164,6 @@ treesaver.boot.domReady = function(e) {
 treesaver.boot.loadProgress_ = function() {
   if (!treesaver.boot.resourcesLoaded_) {
     // Can't show loading screen until resources are loaded
-    return;
-  }
-
-  if (USE_MODULES && !treesaver.boot.coreLoaded_) {
-    // Must wait for the other modules to load
     return;
   }
 
