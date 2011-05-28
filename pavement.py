@@ -205,7 +205,6 @@ def compile(args):
         compiler_flags.append('--define="SUPPORT_IE=false"')
         compiler_flags.append('--define="SUPPORT_LEGACY=false"')
         compiler_flags.append('--define="WITHIN_IOS_WRAPPER=true"')
-        is_single = True
         single_filename = 'treesaver-ios-%s.js' % options.tag
 
     # Make pretty output for debug mode
