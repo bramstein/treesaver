@@ -15,8 +15,9 @@ goog.require('treesaver.layout.Block');
  *
  * @constructor
  * @param {!Element} el HTML node which contains all content.
+ * @param {!treesaver.ui.Document} doc The parent document that owns this content chunk.
  */
-treesaver.layout.Content = function(el) {
+treesaver.layout.Content = function(el, doc) {
   var indices = {
     index: 0,
     figureIndex: 0
@@ -65,30 +66,14 @@ treesaver.layout.Content = function(el) {
    */
   this.blocks = [];
 
+  /**
+   * @type {!treesaver.ui.Document}
+   */
+  this.doc = doc;
+
   // Now we're ready to create our objects, re-use the processChildren
   // function because it does exactly what we need
   treesaver.layout.Block.processChildren(this, el, this.lineHeight, indices);
-
-  /**
-   * Dictionary of fields and values that can be populated
-   * in a grid
-   * @type {Object.<string, string>}
-   */
-  this.fields = {};
-
-  // Extract the microdata items and normalize them (i.e. pick the last item
-  // of each itemprop and pull properties up to the global field object.)
-  treesaver.microdata.getJSONItems(null, el).forEach(function(item) {
-    var scope = treesaver.microdata.normalizeItem(item),
-        keys = Object.keys(scope);
-
-    keys.forEach(function(key) {
-      if (!this.fields[key]) {
-        this.fields[key] = scope[key];
-        treesaver.debug.info('Field found --- ' + key + ': ' + scope[key].toString());
-      }
-    }, this);
-  }, this);
 };
 
 if (goog.DEBUG) {

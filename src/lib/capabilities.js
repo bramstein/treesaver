@@ -346,15 +346,6 @@ treesaver.capabilities.SUPPORTS_FONTFACE = (function() {
 }());
 
 /**
- * Whether the browser has native support for the microdata API
- *
- * @const
- * @type {boolean}
- */
-treesaver.capabilities.SUPPORTS_MICRODATA =
-  'getItems' in document;
-
-/**
  * Whether the browser supports <canvas>
  *
  * @const
@@ -375,7 +366,10 @@ if ('createElementNS' in document) {
    * @const
    * @type {boolean}
    */
-  treesaver.capabilities.SUPPORTS_SVG = 'createSVGRect' in document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  treesaver.capabilities.SUPPORTS_SVG =
+    // Don't bother with SVG in IE7/8
+    'createElementNS' in document &&
+    'createSVGRect' in document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 
   /**
    * Whether the browser supports SMIL
@@ -383,7 +377,8 @@ if ('createElementNS' in document) {
    * @const
    * @type {boolean}
    */
-  treesaver.capabilities.SUPPORTS_SMIL = /SVG/.test(document.createElementNS('http://www.w3.org/2000/svg', 'animate').toString());
+  treesaver.capabilities.SUPPORTS_SMIL = treesaver.capabilities.SUPPORTS_SVG &&
+    /SVG/.test(document.createElementNS('http://www.w3.org/2000/svg', 'animate').toString());
 
   /**
    * Whether the browser supports SVG clip paths
@@ -391,10 +386,8 @@ if ('createElementNS' in document) {
    * @const
    * @type {boolean}
    */
-  treesaver.capabilities.SUPPORTS_SVGCLIPPATHS = /SVG/.test(document.createElementNS('http://www.w3.org/2000/svg', 'clipPath').toString());
-} else {
-  // Don't bother with SVG in IE7/8
-  treesaver.capabilities.SUPPORTS_SVG = treesaver.capabilities.SUPPORTS_SMIL = treesaver.capabilities.SUPPORTS_SVGCLIPPATHS = false;
+  treesaver.capabilities.SUPPORTS_SVGCLIPPATHS = treesaver.capabilities.SUPPORTS_SVG &&
+    /SVG/.test(document.createElementNS('http://www.w3.org/2000/svg', 'clipPath').toString());
 }
 
 treesaver.capabilities.SUPPORTS_INLINESVG = (function() {
@@ -532,7 +525,6 @@ treesaver.capabilities.update_ = function() {
       p(treesaver.capabilities.SUPPORTS_SMIL) + 'smil',
       p(treesaver.capabilities.SUPPORTS_SVGCLIPPATHS) + 'svgclippaths',
       // Not in modernizr
-      p(treesaver.capabilities.SUPPORTS_MICRODATA) + 'microdata',
       p(treesaver.capabilities.SUPPORTS_TREESAVER) + 'treesaver',
       p(treesaver.capabilities.SUPPORTS_FLASH) + 'flash',
       p(treesaver.capabilities.SUPPORTS_ORIENTATION) + 'orientation',

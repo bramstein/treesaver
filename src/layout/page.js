@@ -67,18 +67,9 @@ treesaver.layout.Page = function(content, grids, br) {
   treesaver.dimensions.setCssPx(this.node, 'width', this.size.w);
   treesaver.dimensions.setCssPx(this.node, 'height', this.size.h);
 
-  // Fill in fields
-  Object.keys(content.fields || {}).forEach(function(key) {
-    var fields = treesaver.template.getElementsByBindName(key, null, this.node);
-
-    fields.forEach(function(node) {
-      var view = {};
-
-      view[key] = content.fields[key];
-
-      treesaver.layout.Page.fillField(node, view);
-    });
-  }, this);
+  treesaver.dom.getElementsByProperty('data-template', 'document', null, this.node).forEach(function (el) {
+    el.innerHTML = Mustache.to_html(el.innerHTML, content.doc.meta);
+  });
 
   // Containers
   treesaver.dom.getElementsByClassName('container', this.node).forEach(function(containerNode, i) {
@@ -87,7 +78,7 @@ treesaver.layout.Page = function(content, grids, br) {
 
     if (mapping) {
       figureIndex = mapping.figureIndex;
-      figure = content.figures[figureIndex];
+      figure = /** @type {!treesaver.layout.Figure} */ (content.figures[figureIndex]);
       success = treesaver.layout.Page.fillContainer(containerNode, figure, mapping,
         content.lineHeight);
 
@@ -162,6 +153,14 @@ treesaver.layout.Page = function(content, grids, br) {
     // Centers the page vertically with less work for us
     treesaver.dimensions.setCssPx(this.node, 'marginTop', -this.size.outerH / 2);
 
+    // Are we finished?
+    br.finished = best.grid.scoringFlags['onlypage'] || br.atEnd(content);
+
+    // Add last page flag if complete
+    if (br.finished) {
+      treesaver.dom.addClass(this.node, 'last-page');
+    }
+
     /**
      * @type {string}
      */
@@ -180,9 +179,6 @@ treesaver.layout.Page = function(content, grids, br) {
 
     // Increment page number
     br.pageNumber += 1;
-
-    // Are we finished?
-    br.finished = best.grid.scoringFlags['onlypage'] || br.atEnd(content);
   }
 
   // Cleanup
@@ -908,16 +904,6 @@ treesaver.layout.Page.computeOverhang = function(br, lastBlock, colHeight, heigh
 };
 
 /**
- * Fill in the data field for this node
- * @param {!Element} node
- * @param {!Object} fields
- */
-treesaver.layout.Page.fillField = function(node, fields) {
-  // The field name to put in this element
-  treesaver.template.expand(fields, node);
-};
-
-/**
  * Initialize page as necessary before displaying
  * @return {Element}
  */
@@ -949,7 +935,7 @@ treesaver.layout.Page.prototype.deactivate = function() {
  * @return {!treesaver.layout.Page} A clone of this page
  */
 treesaver.layout.Page.prototype.clone = function() {
-  var p = treesaver.object.clone(this);
+  var p = Object.clone(this);
   // We override the properties that are different by creating a clone
   // and setting those properties explicitly.
   p.node = /** @type {!Element} */ (this.node && this.node.cloneNode(true) || null);
