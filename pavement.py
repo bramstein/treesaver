@@ -181,9 +181,6 @@ def compile(args):
     if not options.build_dir.isdir():
         options.build_dir.makedirs()
 
-    # Whether we should compile to a single file instead of modules
-    is_single = '--modules' not in args
-
     single_filename = 'treesaver-%s.js' % options.tag
 
     compiler_flags = [
