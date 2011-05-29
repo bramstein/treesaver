@@ -13,6 +13,7 @@ options(
     src_dir = HOME_DIR / 'src',
     test_dir = HOME_DIR / 'test',
     tmp_dir = HOME_DIR / '.tmp',
+    lib_dir = HOME_DIR / 'lib',
     closure_dir = HOME_DIR / 'lib/closure',
     closure_compiler = HOME_DIR / 'lib/closure/compiler.jar',
     closure_lint = 'gjslint',
@@ -181,7 +182,7 @@ def compile(args):
     if not options.build_dir.isdir():
         options.build_dir.makedirs()
 
-    single_filename = 'treesaver-%s.js' % options.tag
+    filename = 'treesaver-%s.js' % options.tag
 
     compiler_flags = [
         '--compilation_level=ADVANCED_OPTIMIZATIONS',
@@ -205,7 +206,7 @@ def compile(args):
         compiler_flags.append('--define="SUPPORT_IE=false"')
         compiler_flags.append('--define="SUPPORT_LEGACY=false"')
         compiler_flags.append('--define="WITHIN_IOS_WRAPPER=true"')
-        single_filename = 'treesaver-ios-%s.js' % options.tag
+        filename = 'treesaver-ios-%s.js' % options.tag
 
     # Make pretty output for debug mode
     if '--debug' in args:
@@ -213,7 +214,6 @@ def compile(args):
         compiler_flags.append('--formatting=PRETTY_PRINT')
         compiler_flags.append('--formatting=PRINT_INPUT_DELIMITER')
     else:
-        # Let code know modules are not being used
         # Not sure why this doesn't happen by default
         compiler_flags.append('--define="goog.DEBUG=false"')
 
@@ -226,7 +226,7 @@ def compile(args):
 
     file_list = get_dependency_list(js_files)
     compiler_flags.append('--js %s' % ' --js '.join(file_list))
-    compiler_flags.append('--js_output_file=%s' % (options.build_dir / single_filename))
+    compiler_flags.append('--js_output_file=%s' % (options.build_dir / filename))
 
     # Run the compilation
     sh('java -jar %s %s' % (
@@ -234,33 +234,32 @@ def compile(args):
         ' '.join(compiler_flags),
     ))
 
-    prepend_mustache(options.build_dir / single_filename)
+    prepend_lib(options.lib_dir / 'mustache/mustache.js', options.build_dir / filename)
 
     size()
 
-def prepend_mustache(filename):
-    """Prepend the minified Mustache library to the given file"""
+def prepend_lib(source_file, target_file):
+    """Minify (using SIMPLE_OPTIMIZATIONS) and prepend source_file to target_file."""
 
-    # TODO: This should probably be generalized once we have more than one
-    # external library.
+    tmp_source = options.build_dir / path.basename(source_file)
+    tmp_name = "%s.tmp" % target_file
+
     sh('java -jar %s %s' % (
         options.closure_compiler,
-        ' --compilation_level SIMPLE_OPTIMIZATIONS --js lib/mustache/mustache.js --js_output_file=build/mustache.js'
+        ' --compilation_level SIMPLE_OPTIMIZATIONS --js %s --js_output_file=%s' % (source_file, tmp_source)
     ))
 
-    tmp_name = "%s.tmp" % filename
-
     sh('mv %s %s && mv %s %s && cat %s >> %s && rm %s' % (
-      (filename),
-      (tmp_name),
+      target_file,
+      tmp_name,
 
-      'build/mustache.js',
-      (filename),
+      tmp_source,
+      target_file,
 
-      (tmp_name),
-      (filename),
+      tmp_name,
+      target_file,
 
-      (tmp_name)
+      tmp_name
   ))
 
 @task
