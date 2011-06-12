@@ -189,8 +189,6 @@ $(function () {
         handler = function (e) {
           var idx = e.index;
 
-          console.log(e);
-
           equal(idx.url, 'http://www.example.com/toc.json');
 
           i += 1;

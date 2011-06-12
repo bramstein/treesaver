@@ -152,7 +152,6 @@ $(function () {
     // Make sure theme flag is properly extracted
     tmp.setAttribute('data-theme', 'theme');
     article = new treesaver.ui.Article([]);
-    console.log(tmp.outerHTML);
     ok(article.processHTML(tmp), 'Returns true on success');
     equals(article.theme, 'theme', 'Theme stored');
 

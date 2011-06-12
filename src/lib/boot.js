@@ -13,6 +13,11 @@ goog.require('treesaver.domready');
 goog.require('treesaver.events');
 goog.require('treesaver.resources');
 goog.require('treesaver.scheduler');
+goog.require('treesaver.styles');
+goog.require('treesaver.ui.Article');
+goog.require('treesaver.ui.ArticleManager');
+goog.require('treesaver.ui.Chrome');
+goog.require('treesaver.ui.StateManager');
 
 /**
  * @const
@@ -72,6 +77,11 @@ treesaver.boot.load = function() {
  */
 treesaver.boot.unload = function() {
   treesaver.debug.info('Treesaver unbooting');
+
+  treesaver.events.removeListener(window, 'unload', treesaver.boot.unload);
+
+  treesaver.ui.ArticleManager.unload();
+  treesaver.ui.StateManager.unload();
 
   // Restore HTML
   if (!WITHIN_IOS_WRAPPER && treesaver.boot.inContainedMode) {
@@ -192,6 +202,24 @@ treesaver.boot.loadProgress_ = function() {
 
     // TODO: In compiled module mode, this function won't be visible if in a
     // closure ... may need to export
-    treesaver.core.load();
+    treesaver.debug.info('Core load begin');
+
+    // Make sure we clean up when leaving the page
+    treesaver.events.addListener(window, 'unload', treesaver.boot.unload);
+
+    // Root element for listening to UI events
+    treesaver.boot.eventRoot = treesaver.boot.inContainedMode ?
+      treesaver.boot.tsContainer : window;
+
+    // Kick off boot process, but back up if any single item fails
+    if (treesaver.ui.StateManager.load() &&
+        // Grids
+        treesaver.ui.ArticleManager.load(treesaver.boot.originalHtml)) {
+    }
+    else {
+      treesaver.debug.error('Load failed');
+
+      treesaver.boot.unload();
+    }
   }
 };

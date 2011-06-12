@@ -66,7 +66,7 @@ treesaver.capabilities.SUPPORTS_TREESAVER = !SUPPORT_LEGACY || (
   // Require querySelectorAll in order to exclude Firefox 3.0,
   // but allow IE7 by checking for their non-W3C event model
   ('querySelectorAll' in document ||
-    // Opera 9.64 passes as SUPPORT_LEGACY, does not have querySelectorAll,
+    // Opera 9.64 passes as SUPPORT_LEGACY, does not have querySelectorAll,http://eztv.it/
     // and has both attachEvent and addEventListener. We exclude it here
     // by narrowing down the scope to browsers that do not have querySelectorAll,
     // do have attachEvent but do not have addEventListener. Hopefully that only
@@ -211,59 +211,6 @@ treesaver.capabilities.domCSSPrefix = (function() {
 }());
 
 /**
- * Helper function for testing CSS properties
- *
- * @private
- * @param {!string} propName
- * @param {boolean=} testPrefix
- * @param {boolean=} skipPrimary
- * @return {boolean}
- */
-treesaver.capabilities.cssPropertySupported_ = function(propName, testPrefix, skipPrimary) {
-  var styleObj = document.documentElement.style,
-      prefixed = testPrefix && treesaver.capabilities.domCSSPrefix ?
-        (treesaver.capabilities.domCSSPrefix + propName.charAt(0).toUpperCase() + propName.substr(1)) :
-        false;
-
-  return (!skipPrimary && typeof styleObj[propName] !== 'undefined') ||
-         (!!prefixed && typeof styleObj[prefixed] !== 'undefined');
-};
-
-/**
- * Helper function for testing support of a CSS @media query
- * Hat tip to Modernizr for this code
- *
- * @private
- * @param {!string} queryName
- * @param {boolean=} testPrefix
- * @return {boolean}
- */
-treesaver.capabilities.mediaQuerySupported_ = function(queryName, testPrefix) {
-  var st = document.createElement('style'),
-      div = document.createElement('div'),
-      div_id = 'ts-test',
-      mq = '@media (' + queryName + ')',
-      result;
-
-  if (testPrefix) {
-    mq += ',(' + treesaver.capabilities.cssPrefix + queryName + ')';
-  }
-
-  st.textContent = mq + '{#' + div_id + ' {height:3px}}';
-  div.setAttribute('id', div_id);
-  document.documentElement.appendChild(st);
-  document.documentElement.appendChild(div);
-
-  // Confirm the style was applied
-  result = div.offsetHeight === 3;
-
-  document.documentElement.removeChild(st);
-  document.documentElement.removeChild(div);
-
-  return result;
-};
-
-/**
  * Whether the browser exposes orientation information
  *
  * @const
@@ -278,10 +225,7 @@ treesaver.capabilities.SUPPORTS_ORIENTATION = WITHIN_IOS_WRAPPER ||
  * @const
  * @type {boolean}
  */
-treesaver.capabilities.SUPPORTS_TOUCH = WITHIN_IOS_WRAPPER ||
-  'createTouch' in document ||
-  // Android doesn't expose createTouch, use quick hack
-  /android/.test(treesaver.capabilities.ua_);
+treesaver.capabilities.SUPPORTS_TOUCH = WITHIN_IOS_WRAPPER || Modernizr.touch
 
 /**
  * Does the browser have flash support?
@@ -321,80 +265,44 @@ treesaver.capabilities.SUPPORTS_FLASH = !WITHIN_IOS_WRAPPER && (function() {
  * @const
  * @type {boolean}
  */
-treesaver.capabilities.SUPPORTS_FONTFACE = (function() {
-  if (SUPPORT_LEGACY && treesaver.capabilities.IS_LEGACY) {
-    // Only legacy browser with @font-face support is IE7,
-    // which we don't care enough about
-    return false;
-  }
-
-  // Quick and easy test that works in FF2+, Safari, and Opera
-  // Note: This gives a false positive for older versions of Chrome,
-  // (version 3 and earlier). Market share is too low to care
-  if ('CSSFontFaceRule' in window) {
-    return true;
-  }
-
-  // IE fails in previous support even though it's suported EOT for a
-  // long long time
-  if (SUPPORT_IE && treesaver.capabilities.BROWSER_NAME === 'msie') {
-    return true;
-  }
-
-  // No @font-face support
-  return false;
-}());
-
+treesaver.capabilities.SUPPORTS_FONTFACE = Modernizr.fontface;
 /**
  * Whether the browser supports <canvas>
  *
  * @const
  * @type {boolean}
  */
-treesaver.capabilities.SUPPORTS_CANVAS =
-  'getContext' in document.createElement('canvas');
+treesaver.capabilities.SUPPORTS_CANVAS = Modernizr.canvas && Modernizr.canvastext;
 
 /**
- * SVG detection based on Modernizr (http://www.modernizr.com)
- * Copyright (c) 2009-2011, Faruk Ates and Paul Irish
- * Dual-licensed under the BSD or MIT licenses.
+ * Whether the browser supports SVG
+ *
+ * @const
+ * @type {boolean}
  */
-if ('createElementNS' in document) {
-  /**
-   * Whether the browser supports SVG
-   *
-   * @const
-   * @type {boolean}
-   */
-  treesaver.capabilities.SUPPORTS_SVG =
-    // Don't bother with SVG in IE7/8
-    'createElementNS' in document &&
-    'createSVGRect' in document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+treesaver.capabilities.SUPPORTS_SVG = Modernizr.svg;
+/**
+ * Whether the browser supports SMIL
+ *
+ * @const
+ * @type {boolean}
+ */
+treesaver.capabilities.SUPPORTS_SMIL = Modernizr.smil;
 
-  /**
-   * Whether the browser supports SMIL
-   *
-   * @const
-   * @type {boolean}
-   */
-  treesaver.capabilities.SUPPORTS_SMIL = treesaver.capabilities.SUPPORTS_SVG &&
-    /SVG/.test(document.createElementNS('http://www.w3.org/2000/svg', 'animate').toString());
+/**
+ * Whether the browser supports SVG clip paths
+ *
+ * @const
+ * @type {boolean}
+ */
+treesaver.capabilities.SUPPORTS_SVGCLIPPATHS = Modernizr.svgclippaths;
 
-  /**
-   * Whether the browser supports SVG clip paths
-   *
-   * @const
-   * @type {boolean}
-   */
-  treesaver.capabilities.SUPPORTS_SVGCLIPPATHS = treesaver.capabilities.SUPPORTS_SVG &&
-    /SVG/.test(document.createElementNS('http://www.w3.org/2000/svg', 'clipPath').toString());
-}
-
-treesaver.capabilities.SUPPORTS_INLINESVG = (function() {
-  var div = document.createElement('div');
-  div.innerHTML = '<svg/>';
-  return (div.firstChild && div.firstChild.namespaceURI) == 'http://www.w3.org/2000/svg';
-}());
+/**
+ * Whether the browser supports inline SVG
+ * @const
+ * @type {boolean}
+ */
+treesaver.capabilities.SUPPORTS_INLINESVG = Modernizr.inlinesvg;
 
 /**
  * Whether the browser can play <video>
@@ -402,8 +310,7 @@ treesaver.capabilities.SUPPORTS_INLINESVG = (function() {
  * @const
  * @type {boolean}
  */
-treesaver.capabilities.SUPPORTS_VIDEO =
-  'canPlayType' in document.createElement('video');
+treesaver.capabilities.SUPPORTS_VIDEO = Modernizr.video;
 
 /**
  * Whether the browser supports localStorage
@@ -411,10 +318,7 @@ treesaver.capabilities.SUPPORTS_VIDEO =
  * @const
  * @type {boolean}
  */
-treesaver.capabilities.SUPPORTS_LOCALSTORAGE =
-  'localStorage' in window &&
-  // FF3 supports localStorage, but doesn't have native JSON
-  !treesaver.capabilities.IS_LEGACY;
+treesaver.capabilities.SUPPORTS_LOCALSTORAGE = Modernizr.localstorage;
 
 /**
  * Whether the browser supports offline web applications
@@ -422,8 +326,7 @@ treesaver.capabilities.SUPPORTS_LOCALSTORAGE =
  * @const
  * @type {boolean}
  */
-treesaver.capabilities.SUPPORTS_APPLICATIONCACHE =
-  !WITHIN_IOS_WRAPPER && 'applicationCache' in window;
+treesaver.capabilities.SUPPORTS_APPLICATIONCACHE = Modernizr.applicationcache;
 
 /**
  * Whether the browser supports CSS transforms
@@ -431,10 +334,7 @@ treesaver.capabilities.SUPPORTS_APPLICATIONCACHE =
  * @const
  * @type {boolean}
  */
-treesaver.capabilities.SUPPORTS_CSSTRANSFORMS = WITHIN_IOS_WRAPPER ||
-  treesaver.capabilities.cssPropertySupported_('transformProperty') ||
-  // Browsers used WebkitTransform instead of WebkitTransformProperty
-  treesaver.capabilities.cssPropertySupported_('transform', true, true);
+treesaver.capabilities.SUPPORTS_CSSTRANSFORMS = WITHIN_IOS_WRAPPER || Modernizr.csstransforms;
 
 /**
  * Whether the browser supports CSS 3d transforms
@@ -442,21 +342,7 @@ treesaver.capabilities.SUPPORTS_CSSTRANSFORMS = WITHIN_IOS_WRAPPER ||
  * @const
  * @type {boolean}
  */
-treesaver.capabilities.SUPPORTS_CSSTRANSFORMS3D = WITHIN_IOS_WRAPPER ||
-  (function() {
-    var result = treesaver.capabilities.cssPropertySupported_('perspectiveProperty') ||
-      treesaver.capabilities.cssPropertySupported_('perspective', true, true);
-
-    // Chrome gives false positives for webkitPerspective
-    // Hat tip to modernizr
-    if (result && 'WebkitPerspective' in document.documentElement.style &&
-      treesaver.capabilities.BROWSER_NAME !== 'safari') {
-      // Confirm support via media query test
-      result = treesaver.capabilities.mediaQuerySupported_('perspective', true);
-    }
-
-    return result;
-  }());
+treesaver.capabilities.SUPPORTS_CSSTRANSFORMS3D = WITHIN_IOS_WRAPPER || Modernizr.csstransforms3d;
 
 /**
  * Whether the browser supports CSS transitions
@@ -464,8 +350,7 @@ treesaver.capabilities.SUPPORTS_CSSTRANSFORMS3D = WITHIN_IOS_WRAPPER ||
  * @const
  * @type {boolean}
  */
-treesaver.capabilities.SUPPORTS_CSSTRANSITIONS = WITHIN_IOS_WRAPPER ||
-  treesaver.capabilities.cssPropertySupported_('transitionProperty', true);
+treesaver.capabilities.SUPPORTS_CSSTRANSITIONS = WITHIN_IOS_WRAPPER || Modernizr.csstransitions;
 
 /**
  * Current browser capabilities

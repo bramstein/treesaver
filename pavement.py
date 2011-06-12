@@ -234,6 +234,7 @@ def compile(args):
         ' '.join(compiler_flags),
     ))
 
+    prepend_lib(options.lib_dir / 'modernizr/modernizr.js', options.build_dir / filename)
     prepend_lib(options.lib_dir / 'mustache/mustache.js', options.build_dir / filename)
 
     size()
