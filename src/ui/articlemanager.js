@@ -64,7 +64,7 @@ treesaver.ui.ArticleManager.load = function(initialHTML) {
 
   // Append the initial document, so that we have at least something in case loading the index takes a long time or fails.
   treesaver.ui.ArticleManager.index.appendChild(treesaver.ui.ArticleManager.initialDocument);
-  treesaver.ui.ArticleManager.index.invalidate();
+  treesaver.ui.ArticleManager.index.update();
   treesaver.ui.ArticleManager.index.load();
 
   // Set the initial document to active
@@ -1048,6 +1048,7 @@ if (WITHIN_IOS_WRAPPER) {
   goog.exportSymbol('treesaver.getCurrentPageNumber', treesaver.ui.ArticleManager.getCurrentPageNumber);
   goog.exportSymbol('treesaver.getCurrentPageCount', treesaver.ui.ArticleManager.getCurrentPageCount);
   goog.exportSymbol('treesaver.getCurrentDocumentNumber', treesaver.ui.ArticleManager.getCurrentDocumentNumber);
+  goog.exportSymbol('treesaver.getCurrentDocument', treesaver.ui.ArticleManager.getCurrentDocument);
   goog.exportSymbol('treesaver.getDocumentCount', treesaver.ui.ArticleManager.getDocumentCount);
   goog.exportSymbol('treesaver.goToDocumentByURL', treesaver.ui.ArticleManager.goToDocumentByURL);
 }

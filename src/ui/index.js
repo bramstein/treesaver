@@ -46,7 +46,7 @@ treesaver.ui.Index = function (url) {
   this.documentPositions = {};
 
   /**
-   * Linear list of documents. This is used as a cache. You can invalidate and repopulate the cache by calling invalidate().
+   * Linear list of documents. This is used as a cache. You can invalidate and repopulate the cache by calling update().
    * @type {!Array.<treesaver.ui.Document>}
    */
   this.documents = [];
@@ -103,10 +103,10 @@ treesaver.ui.Index.prototype.parseEntry = function(entry) {
 };
 
 /**
- * Invalidate the document cache and repopulates it. This
+ * Updates the document cache and repopulates it. This
  * should be called after manually modifying the index.
  */
-treesaver.ui.Index.prototype.invalidate = function () {
+treesaver.ui.Index.prototype.update = function () {
   var index = 0;
   
   this.documents = [];
@@ -130,7 +130,7 @@ treesaver.ui.Index.prototype.invalidate = function () {
   }, this);
 
   treesaver.events.fireEvent(document, treesaver.ui.Index.events.UPDATED, {
-    index: this
+    'index': this
   });
 };
 
@@ -256,7 +256,7 @@ treesaver.ui.Index.prototype.load = function () {
   // Don't try loading if we do not have a proper URL
   if (!this.url) {
     treesaver.events.fireEvent(document, treesaver.ui.Index.events.LOADFAILED, {
-      index: this
+      'index': this
     });
     return;
   }
@@ -272,10 +272,10 @@ treesaver.ui.Index.prototype.load = function () {
       this.loaded = true;
 
       treesaver.events.fireEvent(document, treesaver.ui.Index.events.LOADED, {
-        index: this
+        'index': this
       });
 
-      this.invalidate();
+      this.update();
     }
   }
 
@@ -291,7 +291,7 @@ treesaver.ui.Index.prototype.load = function () {
         that.loaded = false;
 
         treesaver.events.fireEvent(document, treesaver.ui.Index.events.LOADFAILED, {
-          index: that
+          'index': that
         });
         return;
       } else {
@@ -311,10 +311,10 @@ treesaver.ui.Index.prototype.load = function () {
       that.loaded = true;
 
       treesaver.events.fireEvent(document, treesaver.ui.Index.events.LOADED, {
-        index: that
+        'index': that
       });
 
-      that.invalidate();
+      that.update();
     } else {
       treesaver.debug.log('Index.load: Fetched index same as cached');
     }
