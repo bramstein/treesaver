@@ -4,31 +4,79 @@ goog.provide('treesaver.Hyphenation');
  * Hyphenation engine.
  *
  * @constructor
- * @param {!{patterns, exceptions: ?string, leftmin: number, rightmin: number}} language The language patterns
- * @param {?Object=} options Hyphenation options (optional.)
+ * @param {!{patterns: !Object, leftmin: !number, rightmin: !number}} language The language pattern file. Compatible with Hyphenator.js.
+ * @param {?Object=} options Options to alter Hypher's hyphenation behaviour.
  */
 treesaver.Hyphenation = function (language, options) {
-    this.trie = this.createTrie(language.patterns);
-    this.leftMin = language.leftmin;
-    this.rightMin = language.rightmin;
 
-    this.minLength = (options && options.minLength) || 4;
-    this.anyChar = (options && options.anyChar) || '.';
-    this.compoundSeperators = (options && options.compoundSeperators) || ['\u002D', '\u2010', '\u2013'];
+    /**
+     * @type {!Hypher.TrieNode}
+     */
+    this.trie = this.createTrie(language['patterns']);
+
+    /**
+     * @type {!number}
+     * @const
+     */
+    this.leftMin = language['leftmin'];
+
+    /**
+     * @type {!number}
+     * @const
+     */
+    this.rightMin = language['rightmin'];
+
+    /**
+     * @type {!number}
+     * @const
+     */
+    this.minLength = (options && options['minLength']) || 4;
+
+    /**
+     * @type {!string}
+     * @const
+     */
+    this.anyChar = (options && options['anyChar']) || '_';
+
+    /**
+     * @type {!Array.<!string>}
+     */
+    this.compoundSeperators = (options && options['compoundSeperators']) || ['\\u002D', '\\u2010', '\\u2013'];
+
+    /**
+     * @type {!RegExp}
+     */
     this.compoundSeperatorsRegex = new RegExp('([' + this.compoundSeperators.join('') + '])', 'g');
+
+    /**
+     * @type {!Object.<string, !Array.<string>>}
+     */
     this.exceptions = {};
 
-    if (language.exceptions) {
-        language.exceptions.split(/,\s?/g).forEach(function (exception) {
-            var hyphenationMarker = exception.indexOf('=') !== -1 ? /=/g : /-/g;
+    if (language['exceptions']) {
+        language['exceptions'].split(/,\s?/g).forEach(function (exception) {
+            var hyphenationMarker = new RegExp(exception.indexOf('=') !== -1 ? '=' : '-', 'g');
             this.exceptions[exception.replace(hyphenationMarker, '')] = exception.split(hyphenationMarker);
         }, this);
     }
 };
 
+/**
+ * @typedef {{_points: !Array.<number>}}
+ */
+Hypher.TrieNode;
+
+/**
+ * Creates a trie from a language pattern.
+ * @private
+ * @param {!Object} patternObject An object with language patterns.
+ * @return {!Hypher.TrieNode} An object trie.
+ */
 treesaver.Hyphenation.prototype.createTrie = function (patternObject) {
     var size = 0,
-        tree = {},
+        tree = {
+            _points: []
+        },
         patterns;
 
     for (size in patternObject) {
@@ -41,25 +89,32 @@ treesaver.Hyphenation.prototype.createTrie = function (patternObject) {
                     t = tree;
 
                 chars.forEach(function (c) {
-                    if (!t[c]) {
-                        t[c] = {};
+                    var codePoint = c.charCodeAt(0);
+
+                    if (!t[codePoint]) {
+                        t[codePoint] = {};
                     }
-                    t = t[c];
+                    t = t[codePoint];
                 });
 
-                points = points.map(function (p) {
+                t._points = points.map(function (p) {
                     return p || 0;
                 });
-
-                t._points = points;
             });
         }
     }
     return tree;
 };
 
+/**
+ * Hyphenates a word.
+ *
+ * @param {!string} word The word to hyphenate
+ * @return {!Array.<!string>} An array of word fragments indicating valid hyphenation points.
+ */
 treesaver.Hyphenation.prototype.hyphenate = function (word) {
     var characters,
+        characterPoints = [],
         originalCharacters,
         i,
         j,
@@ -77,12 +132,12 @@ treesaver.Hyphenation.prototype.hyphenate = function (word) {
         hyphenatedParts,
         partsLength;
 
-    if (word.length <= this.minLength || word.indexOf('\u00AD') !== -1) {
-        return [word];
-    }
-
     if (this.exceptions[word]) {
         return this.exceptions[word];
+    }
+
+    if (word.length <= this.minLength || word.indexOf('\u00AD') !== -1) {
+        return [word];
     }
 
     if (this.compoundSeperatorsRegex.test(word)) {
@@ -115,12 +170,13 @@ treesaver.Hyphenation.prototype.hyphenate = function (word) {
 
     for (i = 0; i < wordLength; i += 1) {
         points[i] = 0;
+        characterPoints[i] = characters[i].charCodeAt(0);
     }
 
     for (i = 0; i < wordLength; i += 1) {
         node = trie;
         for (j = i; j < wordLength; j += 1) {
-            node = node[characters[j]];
+            node = node[characterPoints[j]];
 
             if (node) {
                 nodePoints = node._points;
