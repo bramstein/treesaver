@@ -56,19 +56,47 @@ treesaver.ui.ArticleManager.load = function(initialHTML) {
     treesaver.ui.ArticleManager.initialDocument.loaded = true;
   }
 
-  // Set up event listener for the index
-  treesaver.events.addListener(document, treesaver.ui.Index.events.LOADED, treesaver.ui.ArticleManager.onIndexLoad);
-
-  // Create an index instance. Note that getIndexUrl() may fail, causing the LOADFAILED handler to be called.
-  treesaver.ui.ArticleManager.index = new treesaver.ui.Index(treesaver.ui.ArticleManager.getIndexUrl());
-
-  // Append the initial document, so that we have at least something in case loading the index takes a long time or fails.
-  treesaver.ui.ArticleManager.index.appendChild(treesaver.ui.ArticleManager.initialDocument);
-  treesaver.ui.ArticleManager.index.update();
-  treesaver.ui.ArticleManager.index.load();
+  var index = treesaver.ui.ArticleManager.index = new treesaver.ui.Index();
 
   // Set the initial document to active
   treesaver.ui.ArticleManager.setCurrentDocument(treesaver.ui.ArticleManager.initialDocument, treesaver.ui.ArticlePosition.BEGINNING, null, null, true);
+
+  if (treesaver.settings && treesaver.settings.contents) {
+    var docs = [],
+        doc = null;
+
+    index.parse(treesaver.settings.contents);
+    index.update();
+
+    // Find the initial document
+    docs = index.get(treesaver.ui.ArticleManager.initialDocument.url);
+
+    // Note that this may get called twice, once from the cache and once from the XHR response
+    if (docs.length) {
+      // Update the index with the articles from the initial document, which we have already loaded.
+      docs.forEach(function (doc) {
+        treesaver.ui.ArticleManager.initialDocument.meta = doc.meta;
+        treesaver.ui.ArticleManager.initialDocument.children = doc.children;
+
+        doc.parent.replaceChild(treesaver.ui.ArticleManager.initialDocument, doc);
+      });
+
+      treesaver.ui.ArticleManager.currentDocumentIndex = index.getDocumentIndex(treesaver.ui.ArticleManager.initialDocument);
+
+      document.title = treesaver.ui.ArticleManager.initialDocument.meta['title'] || treesaver.ui.ArticleManager.initialDocument.title;
+
+      index.update();
+    } else {
+      // Whoops, what happens here? We loaded a document, it has an index, but
+      // the index does not contain a reference to the document that referenced it.
+      // Emit an error for now.
+      treesaver.debug.error('onIndexLoad: found index, but the article that refers to the index is not present.');
+    }
+  } else {
+    // No contents. Let's add the initial document and call it a day..
+    index.appendChild(treesaver.ui.ArticleManager.initialDocument);
+    index.update();
+  }
 
   // Set up the loading & error pages
   treesaver.ui.ArticleManager.initLoadingPage();
@@ -101,39 +129,11 @@ treesaver.ui.ArticleManager.unload = function() {
   treesaver.ui.ArticleManager.loadingPageHTML = null;
   treesaver.ui.ArticleManager.loadingPageSize = null;
 
-  treesaver.events.removeListener(document, treesaver.ui.Index.events.LOADED, treesaver.ui.ArticleManager.onIndexLoad);
-
   // Unhook events
   treesaver.ui.ArticleManager.watchedEvents.forEach(function(evt) {
     treesaver.events.removeListener(document, evt, treesaver.ui.ArticleManager.handleEvent);
   });
   window['onpopstate'] = null;
-};
-
-treesaver.ui.ArticleManager.onIndexLoad = function (e) {
-  var index = e.index,
-      docs = index.get(treesaver.ui.ArticleManager.initialDocument.url),
-      doc = null;
-
-  // Note that this may get called twice, once from the cache and once from the XHR response
-  if (docs.length) {
-    // Update the new index with the articles from the initial document, which we have already loaded.
-    docs.forEach(function (doc) {
-      treesaver.ui.ArticleManager.initialDocument.meta = doc.meta;
-      treesaver.ui.ArticleManager.initialDocument.children = doc.children;
-
-      doc.parent.replaceChild(treesaver.ui.ArticleManager.initialDocument, doc);
-    });
-
-    treesaver.ui.ArticleManager.currentDocumentIndex = index.getDocumentIndex(treesaver.ui.ArticleManager.initialDocument);
-
-    document.title = treesaver.ui.ArticleManager.initialDocument.meta['title'] || treesaver.ui.ArticleManager.initialDocument.title;
-  } else {
-    // Whoops, what happens here? We loaded a document, it has an index, but
-    // the index does not contain a reference to the document that referenced it.
-    // Emit an error for now.
-    treesaver.debug.error('onIndexLoad: found index, but the article that refers to the index is not present.');
-  }
 };
 
 /**

@@ -11,29 +11,12 @@ goog.require('treesaver.ui.Document');
  * Class representing the index file (i.e. the table of contents for documents.)
  * @constructor
  * @extends {treesaver.ui.TreeNode}
- * @param {?string} url The url the index was loaded from.
  */
-treesaver.ui.Index = function (url) {
-
-  /**
-   * @type {?string}
-   */
-  this.url = url;
-
+treesaver.ui.Index = function () {
   /**
    * @type {!Array.<treesaver.ui.Document>}
    */
   this.children = [];
-
-  /**
-   * @type {boolean}
-   */
-  this.loaded = false;
-
-  /**
-   * @type {boolean}
-   */
-  this.loading = false;
 
   /**
    * @type {!Object}
@@ -59,8 +42,6 @@ treesaver.ui.Index.prototype = new treesaver.ui.TreeNode();
 treesaver.ui.Index.CACHE_STORAGE_PREFIX = 'cache:';
 
 treesaver.ui.Index.events = {
-  LOADFAILED: 'treesaver.index.loadfailed',
-  LOADED: 'treesaver.index.loaded',
   UPDATED: 'treesaver.index.updated'
 };
 
@@ -210,7 +191,6 @@ treesaver.ui.Index.prototype.get = function (url) {
 
 /**
  * Parses a string or array as the document index.
- * @private
  * @param {!string|!Array} index
  */
 treesaver.ui.Index.prototype.parse = function (index) {
@@ -237,86 +217,4 @@ treesaver.ui.Index.prototype.parse = function (index) {
   return index.map(function (entry) {
     return this.appendChild(this.parseEntry(entry));
   }, this);
-};
-
-/**
- * Load the index file through XHR if it hasn't already been loaded.
- */
-treesaver.ui.Index.prototype.load = function () {
-  var that = this,
-      cached_text = null;
-
-  // TODO: Maybe generalize caching. There seems to be a pattern here.
-
-  // Only load once
-  if (this.loading) {
-    return;
-  }
-
-  // Don't try loading if we do not have a proper URL
-  if (!this.url) {
-    treesaver.events.fireEvent(document, treesaver.ui.Index.events.LOADFAILED, {
-      'index': this
-    });
-    return;
-  }
-
-  this.loading = true;
-
-  if (!WITHIN_IOS_WRAPPER) {
-    cached_text = /** @type {?string} */ (treesaver.storage.get(treesaver.ui.Index.CACHE_STORAGE_PREFIX + this.url));
-
-    if (cached_text) {
-      treesaver.debug.log('Index.load: Processing cached content for index: ' + this.url);
-      this.children = this.parse(cached_text);
-      this.loaded = true;
-
-      treesaver.events.fireEvent(document, treesaver.ui.Index.events.LOADED, {
-        'index': this
-      });
-
-      this.update();
-    }
-  }
-
-  treesaver.debug.info('Index.load: Downloading index: ' + this.url);
-
-  treesaver.network.get(this.url, function (text) {
-    that.loading = false;
-
-    if (!text) {
-      if (WITHIN_IOS_WRAPPER || !cached_text) {
-        treesaver.debug.info('Index.load: Load failed, no index found at: ' + that.url);
-        that.loadFailed = true;
-        that.loaded = false;
-
-        treesaver.events.fireEvent(document, treesaver.ui.Index.events.LOADFAILED, {
-          'index': that
-        });
-        return;
-      } else {
-        // Stick with cached content
-        treesaver.debug.log('Index.load: Using cached content for index: ' + that.url);
-      }
-    } else if (WITHIN_IOS_WRAPPER || cached_text !== text) {
-      if (!WITHIN_IOS_WRAPPER) {
-        treesaver.debug.log('Index.load: Fetched content newer than cache for index: ' + that.url);
-
-        // Save the HTML in the cache
-        treesaver.storage.set(treesaver.ui.Index.CACHE_STORAGE_PREFIX + that.url, text, true);
-      }
-
-      treesaver.debug.log('Index.load: Processing content for index: ' + that.url);
-      that.children = that.parse(text);
-      that.loaded = true;
-
-      treesaver.events.fireEvent(document, treesaver.ui.Index.events.LOADED, {
-        'index': that
-      });
-
-      that.update();
-    } else {
-      treesaver.debug.log('Index.load: Fetched index same as cached');
-    }
-  });
 };
