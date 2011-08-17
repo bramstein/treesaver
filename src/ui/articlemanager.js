@@ -55,6 +55,10 @@ treesaver.ui.ArticleManager.load = function(initialHTML) {
     treesaver.ui.ArticleManager.initialDocument.loaded = true;
   }
 
+  var publication = new treesaver.ui.Publication(window.treesaver_settings || {});
+
+  publication.load(initialHTML);
+
   var index = treesaver.ui.ArticleManager.index = new treesaver.ui.Index();
 
   // Set the initial document to active
@@ -310,20 +314,6 @@ treesaver.ui.ArticleManager.onPopState = function(e) {
       index
     );
   }
-};
-
-/**
- * Returns the URL of the index file if available in the initial page.
- * @private
- * @return {?string}
- */
-treesaver.ui.ArticleManager.getIndexUrl = function () {
-  var link = treesaver.dom.getElementsByProperty('rel', 'index', 'link')[0];
-
-  if (!link) {
-    return null;
-  }
-  return treesaver.network.absoluteURL(link.href);
 };
 
 /**
