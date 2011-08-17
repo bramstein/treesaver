@@ -9,7 +9,7 @@ goog.require('treesaver.ui.TreeNode');
 goog.require('treesaver.ui.Document');
 
 /**
- * Class representing the index file (i.e. the table of contents for documents.)
+ * Class representing the index (i.e. the table of contents for documents.)
  * @constructor
  * @extends {treesaver.ui.TreeNode}
  */
@@ -37,10 +37,6 @@ treesaver.ui.Index = function () {
 };
 
 treesaver.ui.Index.prototype = new treesaver.ui.TreeNode();
-
-// Do we ever use a different cache prefix? If not, perhaps we should
-// pull this up.
-treesaver.ui.Index.CACHE_STORAGE_PREFIX = 'cache:';
 
 treesaver.ui.Index.events = {
   UPDATED: 'treesaver.index.updated'
